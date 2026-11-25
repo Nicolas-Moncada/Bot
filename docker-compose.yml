@@ -1,0 +1,39 @@
+# ==============================================================================
+# Clinica Odontologica Boutique "Lujo Luminoso"
+# Orquestacion Docker Compose para Despliegue Local con Tunel Seguro
+# Cero Emojis - Enlace Loopback 127.0.0.1 - Tunel Cloudflare sin puertos abiertos
+# ==============================================================================
+
+version: "3.8"
+
+services:
+  # Servidor de Aplicacion Clinica
+  lujo-luminoso-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lujo-luminoso-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # Expuesto exclusivamente en la interfaz local (loopback) del PC
+      - "127.0.0.1:8000:8000"
+    networks:
+      - lujo-net
+
+  # Tunel Seguro de Cloudflare (Zero Trust)
+  # Conecta el PC de la clinica con el dominio publico con certificado SSL automatico
+  cloudflared-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: lujo-luminoso-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    networks:
+      - lujo-net
+    depends_on:
+      - lujo-luminoso-app
+
+networks:
+  lujo-net:
+    driver: bridge

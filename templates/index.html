@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ clinic_name }} - Odontologia Estetica y Quirurgica de Alta Precision</title>
+
+    <!-- Fuentes Google: Playfair Display e Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (CDN) con extension de paleta clinica moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cobalt: '#0A192F',
+                        cobaltLight: '#0F2942',
+                        emeraldClinic: '#0D9488',
+                        emeraldDark: '#0F766E',
+                        medicalBlue: '#0284C7',
+                        iceBlue: '#F0F7FF',
+                        iceAlt: '#F8FAFC',
+                        borderIce: '#E2E8F0',
+                        textNavy: '#0A192F',
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        sans: ['Inter', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons (CDN) para iconografia vectorial pura (Cero Emojis) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- FullCalendar v6 y Supabase JS v2 para soporte de vistas operativas y Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Estilos base personalizados -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-white text-slate-800 antialiased selection:bg-[#0D9488]/20 selection:text-[#0A192F] min-h-screen flex flex-col font-sans" data-initial-view="{{ initial_view }}">
+
+    <!-- ====================================================================== -->
+    <!-- BARRA SUPERIOR OPERATIVA PRIVADA PARA PERSONAL STAFF (OCULTA AL PUBLICO) -->
+    <!-- ====================================================================== -->
+    <div id="staff-operational-bar" class="hidden bg-[#0A192F] text-slate-200 border-b border-slate-700/80 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3 z-50">
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-semibold text-white tracking-wide">Consola Clinica Privada</span>
+            <span class="text-slate-400">|</span>
+            <span id="staff-bar-user-badge" class="font-mono text-emerald-300">Personal Autorizado</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-colors" onclick="window.switchView('admin')">
+                <span>Calendario Admin</span>
+            </button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-colors" onclick="window.switchView('doctor')">
+                <span>Modo Doctor</span>
+            </button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-colors" onclick="window.switchView('tv')">
+                <span>Pantalla TV</span>
+            </button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-rose-900/60 hover:bg-rose-800 text-rose-200 hover:text-white transition-colors ml-2" onclick="window.handleLogout()">
+                <span>Cerrar Sesion</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- BARRA DE NAVEGACION PUBLICA BOUTIQUE -->
+    <!-- ====================================================================== -->
+    <header id="main-header" class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logotipo tipografico en serif refinada -->
+            <a href="/" class="flex items-center gap-3 group cursor-pointer" onclick="event.preventDefault(); window.scrollToSection && window.scrollToSection('inicio')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0A192F] to-[#0D9488] flex items-center justify-center text-white shadow-sm">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-300"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-serif text-2xl font-bold tracking-tight text-[#0A192F] group-hover:text-[#0D9488] transition-colors leading-none">
+                        Lujo Luminoso
+                    </span>
+                    <span class="text-[10px] uppercase font-semibold tracking-widest text-[#0D9488] mt-1">
+                        Odontologia de Cita Unica
+                    </span>
+                </div>
+            </a>
+
+            <!-- Navegacion publica minimalista -->
+            <nav class="hidden md:flex items-center gap-6">
+                <button id="nav-inicio" class="text-sm font-semibold text-[#0A192F] border-b-2 border-[#0D9488] pb-1 transition-colors" onclick="window.scrollToSection && window.scrollToSection('inicio')">
+                    Inicio
+                </button>
+                <button id="nav-instalaciones" class="text-sm font-medium text-slate-600 hover:text-[#0A192F] pb-1 border-b-2 border-transparent hover:border-slate-300 transition-colors" onclick="window.scrollToSection && window.scrollToSection('instalaciones')">
+                    Instalaciones
+                </button>
+                <button id="nav-tratamientos" class="text-sm font-medium text-slate-600 hover:text-[#0A192F] pb-1 border-b-2 border-transparent hover:border-slate-300 transition-colors" onclick="window.scrollToSection && window.scrollToSection('tratamientos')">
+                    Especialidades
+                </button>
+                <button id="nav-transformacion" class="text-sm font-medium text-slate-600 hover:text-[#0A192F] pb-1 border-b-2 border-transparent hover:border-slate-300 transition-colors" onclick="window.scrollToSection && window.scrollToSection('transformacion')">
+                    Resultados 3D
+                </button>
+                <button id="nav-experiencia" class="text-sm font-medium text-slate-600 hover:text-[#0A192F] pb-1 border-b-2 border-transparent hover:border-slate-300 transition-colors" onclick="window.scrollToSection && window.scrollToSection('experiencia')">
+                    Por Que Elegirnos
+                </button>
+                <button id="nav-contacto" class="text-sm font-medium text-slate-600 hover:text-[#0A192F] pb-1 border-b-2 border-transparent hover:border-slate-300 transition-colors" onclick="window.scrollToSection && window.scrollToSection('contacto')">
+                    Contacto
+                </button>
+            </nav>
+
+            <!-- Acceso Clinico y Boton de Reserva -->
+            <div class="flex items-center gap-3">
+                <button type="button" class="btn-pill-primary text-xs sm:text-sm py-2 px-5 shadow-sm" onclick="window.switchView && window.switchView('reservar')">
+                    <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                    <span>Reservar Cita</span>
+                </button>
+
+                <!-- Estado: No autenticado -->
+                <div id="auth-logged-out" class="flex items-center">
+                    <button id="btn-open-login" class="inline-flex items-center gap-1.5 border border-slate-300 hover:border-slate-600 bg-slate-50 hover:bg-white text-slate-700 hover:text-slate-900 rounded-full px-4 py-1.5 text-xs font-semibold transition-all shadow-xs" title="Ingreso para personal y pacientes">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                        <span>Acceso Clinico</span>
+                    </button>
+                </div>
+
+                <!-- Estado: Autenticado -->
+                <div id="auth-logged-in" class="hidden flex items-center gap-2">
+                    <button id="btn-user-panel" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 rounded-full px-3 py-1 text-xs font-medium transition-colors">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="user-badge-name">Usuario</span>
+                        <span id="user-badge-role" class="text-[10px] uppercase font-bold bg-white text-slate-700 px-1.5 py-0.2 rounded-full">Rol</span>
+                    </button>
+                    <button id="btn-logout" class="inline-flex items-center gap-1 text-rose-700 hover:text-rose-900 border border-rose-200 hover:bg-rose-50 rounded-full px-3 py-1 text-xs font-medium transition-colors" title="Cerrar sesion">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        <span>Salir</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra movil simplificada -->
+        <div class="flex md:hidden items-center justify-around border-t border-[#E2E8F0] bg-[#F8FAFC] py-2 px-3 text-xs">
+            <button class="flex items-center gap-1 text-[#0A192F] font-semibold py-1 px-2" onclick="window.scrollToSection && window.scrollToSection('inicio')">
+                <i data-lucide="home" class="w-4 h-4 text-[#0D9488]"></i>
+                <span>Inicio</span>
+            </button>
+            <button class="flex items-center gap-1 text-slate-600 font-medium py-1 px-2" onclick="window.scrollToSection && window.scrollToSection('tratamientos')">
+                <i data-lucide="sparkles" class="w-4 h-4 text-[#0284C7]"></i>
+                <span>Servicios</span>
+            </button>
+            <button class="flex items-center gap-1 text-slate-600 font-medium py-1 px-2" onclick="window.switchView && window.switchView('reservar')">
+                <i data-lucide="calendar" class="w-4 h-4 text-[#0D9488]"></i>
+                <span>Reservar</span>
+            </button>
+            <button class="flex items-center gap-1 text-slate-600 font-medium py-1 px-2" id="btn-mobile-login">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>Clinica</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ====================================================================== -->
+    <!-- CONTENIDO PRINCIPAL: MULTI-VISTA SPA -->
+    <!-- ====================================================================== -->
+    <main class="flex-1 w-full">
+
+        <!-- ================================================================== -->
+        <!-- APARTADO 1: LANDING BOUTIQUE DEL PACIENTE (#view-landing) -->
+        <!-- ================================================================== -->
+        <section id="view-landing" class="view-container">
+
+            <!-- 1. HERO SECTION DE ALTO IMPACTO (AZUL COBALTO + ESMERALDA CLINICO) -->
+            <div id="inicio" class="relative bg-hero-gradient text-white overflow-hidden py-16 sm:py-24 lg:py-28">
+                <!-- Efecto visual de fondo -->
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#0D9488_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        <!-- Columna Izquierda: Mensaje y Accion -->
+                        <div class="lg:col-span-7 space-y-8 animate-fade-in">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-xs font-semibold text-emerald-300 backdrop-blur-md">
+                                    <span class="live-pulse-dot"></span>
+                                    <span>Sillon Privado Disponible &bull; Agenda Abierta en Bogota</span>
+                                </div>
+                                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card text-xs font-semibold text-slate-200">
+                                    <i data-lucide="shield-check" class="w-4 h-4 text-[#0284C7]"></i>
+                                    <span>Chico &bull; Cita Unica</span>
+                                </div>
+                            </div>
+
+                            <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12]">
+                                Odontologia Estetica y Quirurgica de Alta Precision
+                            </h1>
+
+                            <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-light max-w-2xl">
+                                Consultorio privado de <strong>un solo sillon</strong> dedicado exclusivamente a usted. Disfrute de atencion directa con el especialista titular, sin salas de espera compartidas y con tiempos extendidos de 30 a 120 minutos.
+                            </p>
+
+                            <!-- Contadores Dinamicos de Autoridad -->
+                            <div class="grid grid-cols-3 gap-4 py-3 border-y border-white/10 max-w-xl">
+                                <div>
+                                    <span class="block font-serif text-2xl sm:text-3xl font-bold text-emerald-400">+15 Años</span>
+                                    <span class="text-xs text-slate-300 font-light">De Experiencia</span>
+                                </div>
+                                <div>
+                                    <span class="block font-serif text-2xl sm:text-3xl font-bold text-white">1 Sillon</span>
+                                    <span class="text-xs text-slate-300 font-light">Cero Salas de Espera</span>
+                                </div>
+                                <div>
+                                    <span class="block font-serif text-2xl sm:text-3xl font-bold text-sky-400">100%</span>
+                                    <span class="text-xs text-slate-300 font-light">Atencion Sin Dolor</span>
+                                </div>
+                            </div>
+
+                            <!-- Botones Principales de Accion -->
+                            <div class="flex flex-wrap items-center gap-4 pt-2">
+                                <button type="button" class="btn-pill-white text-sm sm:text-base py-3.5 px-8 hover-lift" onclick="window.switchView && window.switchView('reservar')">
+                                    <i data-lucide="calendar-plus" class="w-5 h-5 text-[#0D9488]"></i>
+                                    <span>Reservar Cita en Linea</span>
+                                </button>
+                                <a id="btn-hero-whatsapp" href="https://wa.me/573001234567?text=Hola,%20deseo%20informacion%20y%20agendar%20una%20cita%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-secondary text-sm sm:text-base py-3.5 px-8 hover-lift flex items-center gap-2 bg-transparent text-white border-white/30 hover:bg-white/10">
+                                    <i data-lucide="message-circle" class="w-5 h-5 text-emerald-400"></i>
+                                    <span>Consultar por WhatsApp</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Fotografia Clinica HD + Tarjetas Flotantes Glassmorphism -->
+                        <div class="lg:col-span-5 relative">
+                            <div class="zoom-container shadow-2xl border border-white/20 relative rounded-2xl overflow-hidden">
+                                <img src="/static/img/hero_smile_patient.jpg" alt="Paciente con sonrisa saludable y radiante en Lujo Luminoso" class="zoom-image w-full h-[460px] sm:h-[520px] object-cover" loading="eager">
+
+                                <!-- Tarjeta Flotante Superior Izquierda -->
+                                <div class="absolute top-4 left-4 glass-dark-card p-3 rounded-xl max-w-[240px] text-xs space-y-1 shadow-2xl">
+                                    <div class="flex items-center gap-1.5 text-emerald-400 font-bold">
+                                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                                        <span>Atencion Exclusiva 1 a 1</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-100 font-normal">Consultorio y especialista 100% dedicados a ti, sin salas de espera compartidas.</p>
+                                </div>
+
+                                <!-- Tarjeta Flotante Superior Derecha -->
+                                <div class="absolute top-4 right-4 glass-dark-card p-2.5 rounded-xl text-xs space-y-0.5 shadow-2xl">
+                                    <div class="flex items-center gap-1 text-amber-300 font-bold">
+                                        <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                                        <span>Cero Dolor</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-100 font-normal">Anestesia Computarizada</p>
+                                </div>
+
+                                <!-- Tarjeta Flotante Inferior -->
+                                <div class="absolute bottom-4 right-4 glass-dark-card p-3 rounded-xl max-w-[240px] text-xs space-y-1 shadow-2xl">
+                                    <div class="flex items-center gap-1.5 text-sky-400 font-bold">
+                                        <i data-lucide="smile" class="w-4 h-4 text-sky-400"></i>
+                                        <span>Resultados Naturales</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-100 font-normal">Diseno de sonrisa armonico y saludable que devuelve tu tranquilidad y seguridad.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. FILA DE CONFIANZA RAPIDA (4 PILARES EN AZUL HIELO) -->
+            <div class="bg-ice-section border-b border-[#E2E8F0] py-8 reveal-on-scroll">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#E2E8F0] shadow-xs">
+                            <div class="w-10 h-10 rounded-lg bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0">
+                                <i data-lucide="gem" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">Resultados Duraderos</h4>
+                                <p class="text-[11px] text-slate-500">Biomateriales certificados</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#E2E8F0] shadow-xs">
+                            <div class="w-10 h-10 rounded-lg bg-sky-50 text-[#0284C7] flex items-center justify-center shrink-0">
+                                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">Atencion Privada</h4>
+                                <p class="text-[11px] text-slate-500">Exclusividad en Bogota</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#E2E8F0] shadow-xs">
+                            <div class="w-10 h-10 rounded-lg bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0">
+                                <i data-lucide="user-check" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">Especialista Titular</h4>
+                                <p class="text-[11px] text-slate-500">Sin doctores rotativos</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#E2E8F0] shadow-xs">
+                            <div class="w-10 h-10 rounded-lg bg-sky-50 text-[#0284C7] flex items-center justify-center shrink-0">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">Puntualidad Absoluta</h4>
+                                <p class="text-[11px] text-slate-500">Citas sin apresuramientos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVO MODULO 1: TOUR VIRTUAL DE INSTALACIONES BOUTIQUE (#instalaciones) -->
+            <div id="instalaciones" class="py-20 sm:py-28 bg-white border-b border-[#E2E8F0] scroll-mt-20 reveal-on-scroll">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+                    <div class="max-w-3xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Tour Virtual Boutique</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Espacios Concebidos para su Serenidad y Privacidad
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-600 font-light leading-relaxed">
+                            Diseño arquitectónico minimalista donde cada área responde a los más altos estándares de bioseguridad, confort y silencio clínico.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        <!-- Pestañas Interactivas (5 Columnas Izquierda) -->
+                        <div class="lg:col-span-5 flex flex-col gap-3">
+                            <button type="button" class="facility-tab-btn active" data-facility="sillon">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0 tab-icon-box transition-colors">
+                                    <i data-lucide="shield" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="block text-sm font-bold text-slate-900">Suite Clinica Privada</span>
+                                    <span class="text-xs text-slate-500">Espacio privado y atencion sin dolor</span>
+                                </div>
+                            </button>
+
+                            <button type="button" class="facility-tab-btn" data-facility="lounge">
+                                <div class="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center shrink-0 tab-icon-box transition-colors">
+                                    <i data-lucide="coffee" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="block text-sm font-bold text-slate-900">Lounge Privado VIP</span>
+                                    <span class="text-xs text-slate-500">Recepcion serena sin salas de espera llenas</span>
+                                </div>
+                            </button>
+
+                            <button type="button" class="facility-tab-btn" data-facility="lab">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0 tab-icon-box transition-colors">
+                                    <i data-lucide="scan" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="block text-sm font-bold text-slate-900">Laboratorio Digital y 3D</span>
+                                    <span class="text-xs text-slate-500">Escaner intraoral 3D sin pastas</span>
+                                </div>
+                            </button>
+
+                            <button type="button" class="facility-tab-btn" data-facility="esterilizacion">
+                                <div class="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center shrink-0 tab-icon-box transition-colors">
+                                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="block text-sm font-bold text-slate-900">Esterilizacion y Pureza</span>
+                                    <span class="text-xs text-slate-500">Autoclave Clase B y aire puro HEPA</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- Visor de Fotografia HD y Caracteristicas (7 Columnas Derecha) -->
+                        <div class="lg:col-span-7">
+                            <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-lg space-y-6 p-6 sm:p-8">
+                                <div class="zoom-container h-[300px] sm:h-[360px] rounded-2xl overflow-hidden relative shadow-inner">
+                                    <img id="facility-tour-img" src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=85" alt="Atencion dedicada en consultorio odontologico Lujo Luminoso" class="zoom-image w-full h-full object-cover transition-opacity duration-300">
+                                    <div class="absolute top-4 left-4 bg-[#0A192F]/80 backdrop-blur-md text-emerald-300 border border-white/20 text-xs font-semibold px-3 py-1.5 rounded-full">
+                                        <span id="facility-tour-badge">Suite Clinica Privada</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <h3 id="facility-tour-title" class="font-serif text-2xl font-bold text-[#0A192F]">
+                                        Atencion Dedicada 1 a 1 Sin Prisas
+                                    </h3>
+                                    <p id="facility-tour-desc" class="text-sm text-slate-600 leading-relaxed font-light">
+                                        Un espacio exclusivo reservado unicamente para usted durante su procedimiento. Cero salas de espera compartidas, atencion pausada y anestesia digital indolora para una experiencia completamente comoda y libre de estres.
+                                    </p>
+                                    <ul id="facility-tour-features" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-100">
+                                        <li class="flex items-center gap-2 text-xs text-slate-600">
+                                            <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0"></i>
+                                            <span>Consultorio cerrado exclusivamente para 1 paciente</span>
+                                        </li>
+                                        <li class="flex items-center gap-2 text-xs text-slate-600">
+                                            <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0"></i>
+                                            <span>Anestesia computarizada indolora sin molestias</span>
+                                        </li>
+                                        <li class="flex items-center gap-2 text-xs text-slate-600">
+                                            <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0"></i>
+                                            <span>Acompanamiento directo y continuo del especialista</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVO MODULO 2: TRANSFORMADOR DE SONRISA ANTES Y DESPUES (#transformacion) -->
+            <div id="transformacion" class="py-20 sm:py-28 bg-ice-alt border-b border-[#E2E8F0] scroll-mt-20 reveal-on-scroll">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+                    <div class="max-w-3xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Precision Estetica Documentada</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Transformacion de Sonrisa: Antes y Despues
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-600 font-light leading-relaxed">
+                            Deslice el control interactivo horizontalmente para observar la armonia, blancura y translucidez natural obtenida mediante microcarillas cerámicas.
+                        </p>
+                    </div>
+
+                    <div class="max-w-4xl mx-auto space-y-6">
+                        <!-- Comparador Interactivo con Slider -->
+                        <div id="smile-before-after-box" class="before-after-box">
+                            <!-- Imagen Base (Despues - Lado Derecho) -->
+                            <img src="/static/img/smile_after.jpg" alt="Sonrisa Despues del Tratamiento con Microcarillas" class="before-after-img-base">
+
+                            <!-- Imagen Superpuesta (Antes - Lado Izquierdo con clip) -->
+                            <img src="/static/img/smile_before.jpg" alt="Sonrisa Antes del Tratamiento" class="before-after-img-overlay">
+
+                            <!-- Linea divisoria y Handle -->
+                            <div class="before-after-line"></div>
+                            <div class="before-after-handle">
+                                <i data-lucide="chevrons-left-right" class="w-5 h-5 text-[#0D9488]"></i>
+                            </div>
+
+                            <!-- Badges flotantes de orientacion -->
+                            <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full z-20 border border-white/20">
+                                Antes: Desgaste y Tono Amarillento
+                            </div>
+                            <div class="absolute bottom-4 right-4 bg-emerald-950/80 backdrop-blur-md text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full z-20 border border-emerald-500/30">
+                                Despues: Microcarillas Ceramicas E-Max
+                            </div>
+
+                            <!-- Control de Rango Invisible -->
+                            <input type="range" id="smile-before-after-range" min="0" max="100" value="50" class="before-after-range" aria-label="Deslizar para comparar antes y despues">
+                        </div>
+
+                        <!-- 3 Pilares del Resultado Estetico -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                            <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0">
+                                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900">Translucidez Natural</h4>
+                                    <p class="text-[11px] text-slate-500">Esmalte identico al diente biologico</p>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center shrink-0">
+                                    <i data-lucide="shield" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900">Sin Desgaste Agresivo</h4>
+                                    <p class="text-[11px] text-slate-500">Preservacion total de la dentina</p>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900">Garantia de 5 Años</h4>
+                                    <p class="text-[11px] text-slate-500">Respaldo clinico por escrito</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVO MODULO 3: COTIZADOR Y ESTIMADOR DE TIEMPO CLINICO (#cotizador) -->
+            <div id="cotizador" class="py-20 sm:py-28 bg-white border-b border-[#E2E8F0] scroll-mt-20 reveal-on-scroll">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
+                    <div class="max-w-3xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Planificador Interactivo</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Estime su Tiempo Quirurgico y Estetico
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-600 font-light leading-relaxed">
+                            Haga clic en cualquiera de nuestras intervenciones para conocer el tiempo de sillon asignado, biomateriales y preparacion previa.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        <!-- 4 Opciones Seleccionables (7 Columnas Izquierda) -->
+                        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="procedure-card-select selected" data-service="cirugia_implantes">
+                                <div class="flex items-center justify-between pb-2">
+                                    <span class="text-xs font-bold text-[#0D9488] bg-teal-50 px-2.5 py-0.5 rounded-full">120 Minutos</span>
+                                    <i data-lucide="activity" class="w-4 h-4 text-[#0D9488]"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">Implantes y Cirugia Oral</h4>
+                                <p class="text-xs text-slate-500 pt-1 font-light leading-relaxed">Sustitucion definitiva guiada con titanio suizo.</p>
+                            </div>
+
+                            <div class="procedure-card-select" data-service="diseno_sonrisa">
+                                <div class="flex items-center justify-between pb-2">
+                                    <span class="text-xs font-bold text-[#0284C7] bg-sky-50 px-2.5 py-0.5 rounded-full">60 Minutos</span>
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-[#0284C7]"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">Diseno de Sonrisa</h4>
+                                <p class="text-xs text-slate-500 pt-1 font-light leading-relaxed">Microcarillas ceramicas y lentes de contacto.</p>
+                            </div>
+
+                            <div class="procedure-card-select" data-service="ortodoncia">
+                                <div class="flex items-center justify-between pb-2">
+                                    <span class="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full">45 Minutos</span>
+                                    <i data-lucide="smile" class="w-4 h-4 text-purple-700"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">Ortodoncia Invisible</h4>
+                                <p class="text-xs text-slate-500 pt-1 font-light leading-relaxed">Alineadores transparentes y brackets zafiro.</p>
+                            </div>
+
+                            <div class="procedure-card-select" data-service="profilaxis">
+                                <div class="flex items-center justify-between pb-2">
+                                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">30 Minutos</span>
+                                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-700"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm">Profilaxis Ultrasonica</h4>
+                                <p class="text-xs text-slate-500 pt-1 font-light leading-relaxed">Higiene profunda y pulido aeropulidor.</p>
+                            </div>
+                        </div>
+
+                        <!-- Ficha Resumen Dinamica (5 Columnas Derecha) -->
+                        <div class="lg:col-span-5 bg-gradient-to-br from-[#0A192F] to-[#0F2942] text-white p-7 sm:p-8 rounded-3xl shadow-xl space-y-6">
+                            <div class="space-y-2">
+                                <span id="estimator-badge" class="text-xs font-bold uppercase tracking-wider text-emerald-300 block">
+                                    Quirurgico de Alta Complejidad
+                                </span>
+                                <h3 id="estimator-title" class="font-serif text-2xl font-bold leading-tight">
+                                    Implantes Dentales y Cirugia Oral Guiada
+                                </h3>
+                            </div>
+
+                            <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 space-y-1">
+                                <span class="text-[11px] text-slate-300 block font-light">Tiempo Total en Sillon Reservado:</span>
+                                <span id="estimator-time" class="text-lg font-bold text-emerald-300 font-serif">
+                                    120 Minutos (Bloque Completo)
+                                </span>
+                            </div>
+
+                            <p id="estimator-desc" class="text-xs sm:text-sm text-slate-200 leading-relaxed font-light">
+                                Procedimiento de sustitucion definitiva con titanio grado medico suizo. Guiado tomografico 3D y anestesia indolora computarizada.
+                            </p>
+
+                            <div class="pt-2">
+                                <button type="button" id="estimator-btn-book" class="btn-pill-white w-full text-sm py-3 px-6 hover-lift text-center font-bold" onclick="window.selectServiceAndGo('cirugia_implantes')">
+                                    <i data-lucide="calendar-check" class="w-4 h-4 text-[#0D9488]"></i>
+                                    <span>Reservar Este Procedimiento en Linea</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. CATALOGO DE ESPECIALIDADES CON FOTOGRAFIA HD Y ZOOM EN HOVER (#tratamientos) -->
+            <div id="tratamientos" class="py-20 sm:py-28 bg-white scroll-mt-20 reveal-on-scroll">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+                    <div class="max-w-3xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Catalogo Clinico Especializado</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Procedimientos Odontologicos de Vanguardia
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-600 font-light leading-relaxed">
+                            Intervenciones quirurgicas y esteticas de alta definicion ejecutadas en un solo sillon con precision microscopica.
+                        </p>
+
+                        <!-- Filtros Dinamicos de Categoria -->
+                        <div class="flex flex-wrap items-center justify-center gap-2 pt-4">
+                            <button type="button" class="treatment-filter-chip active" data-category="all">Todos los Procedimientos</button>
+                            <button type="button" class="treatment-filter-chip" data-category="estetica">Estetica Dental</button>
+                            <button type="button" class="treatment-filter-chip" data-category="quirurgico">Quirurgico e Implantes</button>
+                            <button type="button" class="treatment-filter-chip" data-category="prevencion">Prevencion y Cuidado</button>
+                        </div>
+                    </div>
+
+                    <div id="treatment-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <!-- Tarjeta 1: Implantes Dentales y Cirugia Oral (120 min) -->
+                        <div class="clinic-card treatment-card-item flex flex-col justify-between overflow-hidden group hover-lift" data-category="quirurgico">
+                            <div class="zoom-container h-48 relative">
+                                <img src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80" alt="Implantes Dentales y Cirugia Oral" class="zoom-image">
+                                <div class="absolute top-3 right-3 bg-[#0A192F]/80 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
+                                    120 min | Quirurgico
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                                <div class="space-y-2">
+                                    <h3 class="font-serif text-lg font-bold text-[#0A192F] group-hover:text-[#0D9488] transition-colors">
+                                        Implantes y Cirugia Oral
+                                    </h3>
+                                    <p class="text-xs text-slate-600 leading-relaxed font-light">
+                                        Reemplazo definitivo con implantes de titanio oseointegrables de origen suizo y regeneracion osea guiada.
+                                    </p>
+                                    <ul class="space-y-1.5 pt-2 text-xs text-slate-500">
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Guiado tomografico 3D</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Procedimiento indoloro</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Garantia biomecanica por escrito</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                                    <button type="button" class="btn-pill-primary w-full text-xs py-2.5 px-4" onclick="window.selectServiceAndGo('cirugia_implantes')">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                        <span>Reservar Turno (120 min)</span>
+                                    </button>
+                                    <a href="https://wa.me/573001234567?text=Hola,%20deseo%20asesoria%20sobre%20Implantes%20Dentales%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-secondary w-full text-xs py-2 px-4 text-center">
+                                        <span>Consultar por WhatsApp</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 2: Diseno de Sonrisa Digital (60 min) -->
+                        <div class="clinic-card treatment-card-item flex flex-col justify-between overflow-hidden group hover-lift" data-category="estetica">
+                            <div class="zoom-container h-48 relative">
+                                <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80" alt="Diseno de Sonrisa Digital" class="zoom-image">
+                                <div class="absolute top-3 right-3 bg-[#0A192F]/80 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
+                                    60 min | Alta Estetica
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                                <div class="space-y-2">
+                                    <h3 class="font-serif text-lg font-bold text-[#0A192F] group-hover:text-[#0D9488] transition-colors">
+                                        Diseno de Sonrisa Digital
+                                    </h3>
+                                    <p class="text-xs text-slate-600 leading-relaxed font-light">
+                                        Microcarillas ceramicas y lentes de contacto dental con acabado anatomico ultrafino sin desgaste agresivo.
+                                    </p>
+                                    <ul class="space-y-1.5 pt-2 text-xs text-slate-500">
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Analisis facial y DSD previo</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Blanco natural sin opacidad</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Ceramica feldespatica alemana</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                                    <button type="button" class="btn-pill-primary w-full text-xs py-2.5 px-4" onclick="window.selectServiceAndGo('diseno_sonrisa')">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                        <span>Reservar Turno (60 min)</span>
+                                    </button>
+                                    <a href="https://wa.me/573001234567?text=Hola,%20deseo%20asesoria%20sobre%20Diseno%20de%20Sonrisa%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-secondary w-full text-xs py-2 px-4 text-center">
+                                        <span>Consultar por WhatsApp</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 3: Ortodoncia Invisible y Estetica (45 min) -->
+                        <div class="clinic-card treatment-card-item flex flex-col justify-between overflow-hidden group hover-lift" data-category="estetica">
+                            <div class="zoom-container h-48 relative">
+                                <img src="https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&w=800&q=80" alt="Ortodoncia Invisible y Estetica" class="zoom-image">
+                                <div class="absolute top-3 right-3 bg-[#0A192F]/80 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
+                                    45 min | Alineacion
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                                <div class="space-y-2">
+                                    <h3 class="font-serif text-lg font-bold text-[#0A192F] group-hover:text-[#0D9488] transition-colors">
+                                        Ortodoncia Invisible
+                                    </h3>
+                                    <p class="text-xs text-slate-600 leading-relaxed font-light">
+                                        Alineadores transparentes removibles y brackets de zafiro de baja friccion para una correccion rapida y discreta.
+                                    </p>
+                                    <ul class="space-y-1.5 pt-2 text-xs text-slate-500">
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Escaneo intraoral sin pastas</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Planificacion cinematica 3D</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Controles directos con especialista</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                                    <button type="button" class="btn-pill-primary w-full text-xs py-2.5 px-4" onclick="window.selectServiceAndGo('ortodoncia')">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                        <span>Reservar Turno (45 min)</span>
+                                    </button>
+                                    <a href="https://wa.me/573001234567?text=Hola,%20deseo%20asesoria%20sobre%20Ortodoncia%20Invisible%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-secondary w-full text-xs py-2 px-4 text-center">
+                                        <span>Consultar por WhatsApp</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 4: Profilaxis Ultrasonica y Periodoncia (30 min) -->
+                        <div class="clinic-card treatment-card-item flex flex-col justify-between overflow-hidden group hover-lift" data-category="prevencion">
+                            <div class="zoom-container h-48 relative">
+                                <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80" alt="Profilaxis Ultrasonica y Periodoncia" class="zoom-image">
+                                <div class="absolute top-3 right-3 bg-[#0A192F]/80 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
+                                    30 min | Prevencion
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                                <div class="space-y-2">
+                                    <h3 class="font-serif text-lg font-bold text-[#0A192F] group-hover:text-[#0D9488] transition-colors">
+                                        Profilaxis y Periodoncia
+                                    </h3>
+                                    <p class="text-xs text-slate-600 leading-relaxed font-light">
+                                        Higiene profunda con tecnologia piezoelectrica, eliminacion de manchas con aeropulidor de bicarbonato y fluor protector.
+                                    </p>
+                                    <ul class="space-y-1.5 pt-2 text-xs text-slate-500">
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Eliminacion total de calculo dental</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Remocion de manchas de cafe o te</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                                            <span>Cero dolor y frescura inmediata</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                                    <button type="button" class="btn-pill-primary w-full text-xs py-2.5 px-4" onclick="window.selectServiceAndGo('profilaxis')">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                        <span>Reservar Turno (30 min)</span>
+                                    </button>
+                                    <a href="https://wa.me/573001234567?text=Hola,%20deseo%20agendar%20Profilaxis%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-secondary w-full text-xs py-2 px-4 text-center">
+                                        <span>Consultar por WhatsApp</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. POR QUE ELEGIRNOS: COMPARATIVA Y METODOLOGIA (#experiencia) -->
+            <div id="experiencia" class="py-20 sm:py-28 bg-ice-alt border-y border-[#E2E8F0] scroll-mt-20 space-y-20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                    <div class="max-w-3xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Modelo de Cita Unica</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Por que Lujo Luminoso transforma su experiencia dental?
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-600 font-light leading-relaxed">
+                            Comparemos la atencion en cadenas masivas frente al rigor y exclusividad de nuestro consultorio de un solo sillon.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                        <!-- Columna Cadenas Masivas -->
+                        <div class="p-8 rounded-2xl bg-white border border-slate-200 space-y-6 shadow-xs">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                                    <i data-lucide="users" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Cadenas Odontologicas Masivas</h3>
+                                    <p class="text-xs text-slate-500">Modelo de alto volumen y rotacion</p>
+                                </div>
+                            </div>
+
+                            <ul class="space-y-4 text-xs sm:text-sm text-slate-600">
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="x" class="w-4 h-4 text-rose-500 shrink-0 mt-0.5"></i>
+                                    <span>Salas de espera repletas de pacientes y tiempos de retraso imprevistos.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="x" class="w-4 h-4 text-rose-500 shrink-0 mt-0.5"></i>
+                                    <span>Doctores rotativos donde cada cita es atendida por un profesional distinto.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="x" class="w-4 h-4 text-rose-500 shrink-0 mt-0.5"></i>
+                                    <span>Citas cronometradas de 15 minutos con atencion apresurada e impersonal.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="x" class="w-4 h-4 text-rose-500 shrink-0 mt-0.5"></i>
+                                    <span>Costos variables no transparentados y planes sin garantia clara.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Columna Lujo Luminoso -->
+                        <div class="p-8 rounded-2xl bg-white border-2 border-[#0D9488] space-y-6 shadow-md relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-[#0D9488] text-white text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-bl-lg">
+                                Experiencia Exclusiva
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shadow-xs">
+                                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-[#0A192F]">Clinica Boutique Lujo Luminoso</h3>
+                                    <p class="text-xs text-[#0D9488] font-semibold">1 Doctor &bull; 1 Sillon Clinico Cerrado</p>
+                                </div>
+                            </div>
+
+                            <ul class="space-y-4 text-xs sm:text-sm text-slate-700">
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5"></i>
+                                    <span><strong>Cero salas de espera:</strong> El consultorio se bloquea por completo para usted.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5"></i>
+                                    <span><strong>Especialista titular dedicado:</strong> Su evolucion la atiende el mismo doctor siempre.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5"></i>
+                                    <span><strong>Tiempos sin prisa:</strong> Intervalos quirurgicos y esteticos de 30 a 120 minutos.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5"></i>
+                                    <span><strong>Transparencia total:</strong> Diagnostico fotografico previo y presupuesto por escrito.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proceso Clinico en 4 Fases -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                    <div class="max-w-2xl mx-auto text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Metodologia Clinica</span>
+                        <h2 class="font-serif text-3xl text-[#0A192F] font-bold tracking-tight">
+                            Su tratamiento en 4 etapas transparentes
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="clinic-card p-6 space-y-3">
+                            <span class="font-serif text-2xl font-bold text-[#0D9488] block">01</span>
+                            <h3 class="text-sm font-bold text-slate-900">Diagnostico y Escaneo 3D</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Examen clinico, evaluacion periodontal de encias y registro fotografico digital en alta definicion.
+                            </p>
+                        </div>
+                        <div class="clinic-card p-6 space-y-3">
+                            <span class="font-serif text-2xl font-bold text-[#0D9488] block">02</span>
+                            <h3 class="text-sm font-bold text-slate-900">Plan Maestro y Costo Claro</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Estructuracion del cronograma terapeutico con costos exactos por escrito y sin adicionales ocultos.
+                            </p>
+                        </div>
+                        <div class="clinic-card p-6 space-y-3">
+                            <span class="font-serif text-2xl font-bold text-[#0D9488] block">03</span>
+                            <h3 class="text-sm font-bold text-slate-900">Ejecucion de Precision</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Intervencion quirurgica o estetica indolora en cita unica con biomateriales de maxima durabilidad.
+                            </p>
+                        </div>
+                        <div class="clinic-card p-6 space-y-3">
+                            <span class="font-serif text-2xl font-bold text-[#0D9488] block">04</span>
+                            <h3 class="text-sm font-bold text-slate-900">Garantia y Soporte Directo</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Acompanamiento postoperatorio directo con el especialista por WhatsApp y revisiones periodicas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resenas y Experiencias Reales de Pacientes (#resenas) -->
+                <div id="resenas" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 reveal-on-scroll">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+                        <div class="space-y-3 max-w-2xl">
+                            <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Experiencias y Calificaciones Reales</span>
+                            <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                                La Confianza de Nuestros Pacientes
+                            </h2>
+                            <p class="text-sm text-slate-600 font-light">
+                                Testimonios de pacientes verificados atendidos bajo nuestro protocolo de cita unica exclusiva.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-4 shrink-0">
+                            <div class="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-xs">
+                                <div class="text-center">
+                                    <span id="reviews-average-rating" class="font-serif text-2xl font-bold text-[#0A192F]">5.0</span>
+                                    <span class="text-[10px] text-slate-400 block">/ 5.0</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-0.5 text-amber-400">
+                                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                    </div>
+                                    <span class="text-xs text-slate-500 block"><span id="reviews-total-count" class="font-bold text-slate-700">12</span> opiniones verificadas</span>
+                                </div>
+                            </div>
+                            <button type="button" id="btn-open-review-modal" class="btn-pill-primary py-3 px-5 text-sm flex items-center gap-2 hover-lift">
+                                <i data-lucide="message-square-plus" class="w-4 h-4"></i>
+                                <span>Escribir una Reseña</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor Dinamico de Resenas -->
+                    <div id="reviews-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Se llena automaticamente desde /api/v1/resenas -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. PREGUNTAS FRECUENTES (FAQ) Y CONTACTO (#contacto) -->
+            <div id="contacto" class="py-20 sm:py-28 bg-white scroll-mt-20 space-y-20">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+                    <div class="text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Claridad y Confianza</span>
+                        <h2 class="font-serif text-3xl sm:text-4xl text-[#0A192F] font-bold tracking-tight">
+                            Preguntas Frecuentes
+                        </h2>
+                    </div>
+
+                    <div class="space-y-4" id="faq-accordion-container">
+                        <div class="faq-accordion-item faq-open">
+                            <button type="button" class="faq-accordion-header" aria-expanded="true">
+                                <span>Que incluye la consulta de valoracion?</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 faq-icon-chevron shrink-0 text-slate-500"></i>
+                            </button>
+                            <div class="faq-accordion-content">
+                                <p>
+                                    Incluye examen clinico exhaustivo con magnificacion optica, evaluacion de encias, analisis oclusal funcional y diagnostico fotografico digital. Se le entregara un plan de tratamiento transparente con cronograma de citas y costos claros.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="faq-accordion-item">
+                            <button type="button" class="faq-accordion-header" aria-expanded="false">
+                                <span>Cuanto tiempo dura cada procedimiento clinico?</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 faq-icon-chevron shrink-0 text-slate-500"></i>
+                            </button>
+                            <div class="faq-accordion-content">
+                                <p>
+                                    Nuestras sesiones estan estrictamente calibradas: Profilaxis (30 min), Control de Ortodoncia (45 min), Diseno de Sonrisa (60 min) y Cirugia/Implantes (120 min). El consultorio se reserva en exclusividad durante todo su bloque horario.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="faq-accordion-item">
+                            <button type="button" class="faq-accordion-header" aria-expanded="false">
+                                <span>Puedo agendar y sincronizar mi cita con Google Calendar?</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 faq-icon-chevron shrink-0 text-slate-500"></i>
+                            </button>
+                            <div class="faq-accordion-content">
+                                <p>
+                                    Si. Al confirmar su cita en nuestro portal en linea, el sistema le permite agregarla automaticamente a su Google Calendar en un solo clic, ademas de poder descargar el archivo universal .ics para Apple Calendar o Outlook.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="faq-accordion-item">
+                            <button type="button" class="faq-accordion-header" aria-expanded="false">
+                                <span>Como garantizan la atencion sin dolor?</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 faq-icon-chevron shrink-0 text-slate-500"></i>
+                            </button>
+                            <div class="faq-accordion-content">
+                                <p>
+                                    Empleamos sistemas de anestesia computarizada indolora, biomateriales suizos de alta biocompatibilidad e instrumental piezoelectrico de minima invasion que protegen los tejidos blandos y aceleran la recuperacion.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner CTA Final de Contacto -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="p-10 sm:p-14 rounded-3xl bg-hero-gradient text-white text-center max-w-4xl mx-auto space-y-6 shadow-xl">
+                        <span class="text-xs font-bold uppercase tracking-widest text-emerald-300 block">
+                            Atencion Clinica de Alta Gama
+                        </span>
+                        <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-tight">
+                            Una experiencia odontologica donde su tiempo y bienestar son la maxima prioridad
+                        </h2>
+                        <p class="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto font-light leading-relaxed">
+                            Reserve su espacio exclusivo en nuestro sillon clinico o consultenos directamente por WhatsApp para recibir orientacion inmediata de nuestro asistente virtual.
+                        </p>
+                        <div class="pt-4 flex flex-wrap items-center justify-center gap-4">
+                            <a id="btn-final-whatsapp" href="https://wa.me/573001234567?text=Hola,%20deseo%20informacion%20y%20agendar%20una%20cita%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="btn-pill-white text-sm sm:text-base py-3.5 px-8 shadow-sm">
+                                <svg class="w-5 h-5 fill-current mr-2 text-[#25D366]" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                </svg>
+                                <span>Escribenos por WhatsApp</span>
+                            </a>
+                            <button type="button" class="btn-pill-secondary text-sm sm:text-base py-3.5 px-8 bg-transparent text-white border-white/40 hover:bg-white/10" onclick="window.switchView && window.switchView('reservar')">
+                                <span>Ver Agenda Disponible</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 Tarjetas de Informacion Fisica -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="clinic-card p-6 space-y-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center">
+                                <i data-lucide="map-pin" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900">Ubicacion Privada</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Carrera 15 # 85-30, Consultorio 402<br>
+                                Barrio Chico, Bogota D.C.<br>
+                                Estacionamiento privado y vigilancia 24/7.
+                            </p>
+                        </div>
+
+                        <div class="clinic-card p-6 space-y-3">
+                            <div class="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900">Horario de Atencion</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                Lunes a Viernes: 07:00 a 17:00<br>
+                                Citas exclusivas agendadas con anticipacion.<br>
+                                Fines de semana y festivos: Cerrado.
+                            </p>
+                        </div>
+
+                        <div class="clinic-card p-6 space-y-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center">
+                                <i data-lucide="message-circle" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900">Canal WhatsApp Oficial</h3>
+                            <p class="text-xs text-slate-600 font-light leading-relaxed">
+                                +57 300 123 4567<br>
+                                Asistente virtual para dudas y reservas.<br>
+                                Confirmacion inmediata en agenda digital.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PIE DE PAGINA -->
+            <footer class="border-t border-[#E2E8F0] bg-white py-12">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-[#0A192F]">Lujo Luminoso</span>
+                            <span>&bull;</span>
+                            <span>2026 Clinica Odontologica Boutique</span>
+                            <span>&bull;</span>
+                            <span>Todos los derechos reservados</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button type="button" id="btn-footer-login" class="text-slate-400 hover:text-slate-700 text-xs transition-colors flex items-center gap-1">
+                                <i data-lucide="lock" class="w-3 h-3"></i>
+                                <span>Acceso Clinico</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- APARTADO 2: PORTAL DE RESERVA CON GOOGLE CALENDAR (#view-reservar) -->
+        <!-- ================================================================== -->
+        <section id="view-reservar" class="view-container hidden max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
+            <!-- Header Principal -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 text-xs text-[#0D9488] font-bold mb-1 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                        <span>Sillón Privado Exclusivo • Cero Esperas</span>
+                    </div>
+                    <h1 class="font-serif text-2xl sm:text-3xl font-bold text-[#0A192F] tracking-tight">Agendamiento de Cita Odontologica</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Seleccione su tratamiento, fecha y horario de preferencia. Su cita quedará blindada y confirmada al instante.</p>
+                </div>
+                <button type="button" class="btn-compact btn-secondary text-xs shrink-0 self-start sm:self-auto" onclick="window.switchView && window.switchView('landing')">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Volver al Inicio</span>
+                </button>
+            </div>
+
+            <!-- Indicador Paso a Paso del Wizard -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 p-3 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <div class="wizard-step step-active" id="step-nav-1">
+                    <span class="wizard-step-circle">1</span>
+                    <div class="text-left">
+                        <span class="text-[10px] text-slate-400 font-medium block">Paso 1</span>
+                        <span class="text-xs font-bold text-slate-900 hidden sm:inline">Tratamiento</span>
+                    </div>
+                </div>
+                <div class="wizard-step step-active" id="step-nav-2">
+                    <span class="wizard-step-circle">2</span>
+                    <div class="text-left">
+                        <span class="text-[10px] text-slate-400 font-medium block">Paso 2</span>
+                        <span class="text-xs font-bold text-slate-900 hidden sm:inline">Fecha y Turno</span>
+                    </div>
+                </div>
+                <div class="wizard-step" id="step-nav-3">
+                    <span class="wizard-step-circle">3</span>
+                    <div class="text-left">
+                        <span class="text-[10px] text-slate-400 font-medium block">Paso 3</span>
+                        <span class="text-xs font-bold text-slate-900 hidden sm:inline">Confirmación</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Reserva -->
+            <div id="booking-container-card" class="clinic-card p-6 sm:p-8 space-y-8">
+                <!-- SELECCION VISUAL DE PROCEDIMIENTO (4 TARJETAS INTERACTIVAS) -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">1. Seleccione su Tratamiento</label>
+                            <p class="text-xs text-slate-500">Cada procedimiento cuenta con tiempo clínico exclusivo asignado en el sillón.</p>
+                        </div>
+                        <span id="selected-service-duration" class="text-xs font-bold text-[#0D9488] bg-teal-50 px-3 py-1 rounded-full border border-teal-200">Duración: 30 min</span>
+                    </div>
+
+                    <!-- Grilla de 4 Tarjetas Interactivas con Colores -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="booking-service-card card-selected" data-service-key="profilaxis">
+                            <div class="flex items-center justify-between pb-2">
+                                <span class="text-[11px] font-bold text-[#0D9488] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">30 Min</span>
+                                <div class="w-7 h-7 rounded-lg bg-teal-50 text-[#0D9488] flex items-center justify-center">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Profilaxis / Limpieza</h4>
+                            <p class="text-[11px] text-slate-500 pt-1 leading-snug">Ultrasonido indoloro y eliminación de placa.</p>
+                        </div>
+
+                        <div class="booking-service-card" data-service-key="ortodoncia">
+                            <div class="flex items-center justify-between pb-2">
+                                <span class="text-[11px] font-bold text-[#0284C7] bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">45 Min</span>
+                                <div class="w-7 h-7 rounded-lg bg-sky-50 text-[#0284C7] flex items-center justify-center">
+                                    <i data-lucide="smile" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Ortodoncia Invisible</h4>
+                            <p class="text-[11px] text-slate-500 pt-1 leading-snug">Control y planeación digital de alineadores.</p>
+                        </div>
+
+                        <div class="booking-service-card" data-service-key="diseno_sonrisa">
+                            <div class="flex items-center justify-between pb-2">
+                                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">60 Min</span>
+                                <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                    <i data-lucide="award" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Diseño de Sonrisa 3D</h4>
+                            <p class="text-[11px] text-slate-500 pt-1 leading-snug">Microcarillas y estética digital de precisión.</p>
+                        </div>
+
+                        <div class="booking-service-card" data-service-key="cirugia_implantes">
+                            <div class="flex items-center justify-between pb-2">
+                                <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">120 Min</span>
+                                <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Cirugía e Implantes</h4>
+                            <p class="text-[11px] text-slate-500 pt-1 leading-snug">Titanio suizo con microcirugía guiada 3D.</p>
+                        </div>
+                    </div>
+
+                    <!-- Select oculto / sincronizado para compatibilidad total con tests y scripts existentes -->
+                    <select id="select-service" class="hidden">
+                        <option value="profilaxis" selected>Profilaxis / Limpieza Profunda (30 min)</option>
+                        <option value="ortodoncia">Control de Ortodoncia Invisible (45 min)</option>
+                        <option value="diseno_sonrisa">Diseno de Sonrisa Digital (60 min)</option>
+                        <option value="cirugia_implantes">Cirugia / Implantes Dentales (120 min)</option>
+                    </select>
+                </div>
+
+                <!-- SELECCION DE FECHA (CALENDARIO BOUTIQUE CON COLORES) -->
+                <div class="space-y-4 pt-4 border-t border-slate-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">2. Elija la Fecha de su Cita</label>
+                            <p class="text-xs text-slate-500">Atención exclusiva de lunes a viernes (fines de semana y festivos cerrados por bioseguridad).</p>
+                        </div>
+                        <!-- Atajos rápidos -->
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" class="btn-quick-date py-1.5 px-3 text-xs rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-[#0D9488] font-bold text-slate-700 transition-all border border-slate-200" data-quick="today">Hoy</button>
+                            <button type="button" class="btn-quick-date py-1.5 px-3 text-xs rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-[#0D9488] font-bold text-slate-700 transition-all border border-slate-200" data-quick="tomorrow">Mañana</button>
+                            <button type="button" class="btn-quick-date py-1.5 px-3 text-xs rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-[#0D9488] font-bold text-slate-700 transition-all border border-slate-200" data-quick="monday">Próximo Lunes</button>
+                        </div>
+                    </div>
+
+                    <!-- Calendario -->
+                    <div class="bg-gradient-to-b from-[#F8FAFC] to-white border-2 border-[#0D9488]/30 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+                        <!-- Header del calendario -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0A192F] to-[#0D9488] text-white flex items-center justify-center font-bold shadow-xs">
+                                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 id="custom-cal-month-year" class="font-serif text-lg font-bold text-[#0A192F]">Noviembre 2026</h3>
+                                    <span id="custom-cal-selected-label" class="text-xs text-[#0D9488] font-semibold block">Seleccione su día de preferencia</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" id="btn-cal-prev-month" class="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:text-[#0D9488] text-slate-600 flex items-center justify-center shadow-xs transition-colors" title="Mes Anterior">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                </button>
+                                <button type="button" id="btn-cal-next-month" class="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 hover:text-[#0D9488] text-slate-600 flex items-center justify-center shadow-xs transition-colors" title="Mes Siguiente">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dias Semana -->
+                        <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold text-slate-500 border-b border-slate-200 pb-2">
+                            <span class="text-[#0D9488]">LUN</span>
+                            <span class="text-[#0D9488]">MAR</span>
+                            <span class="text-[#0D9488]">MIE</span>
+                            <span class="text-[#0D9488]">JUE</span>
+                            <span class="text-[#0D9488]">VIE</span>
+                            <span class="text-slate-400">SAB</span>
+                            <span class="text-slate-400">DOM</span>
+                        </div>
+
+                        <!-- Grilla de Dias -->
+                        <div id="custom-cal-grid" class="grid grid-cols-7 gap-1 sm:gap-2 text-center"></div>
+
+                        <!-- Leyenda -->
+                        <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-3 border-t border-slate-200 gap-2">
+                            <div class="flex items-center gap-3">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-3 h-3 rounded-md bg-gradient-to-tr from-[#0A192F] to-[#0D9488] inline-block shadow-xs"></span>
+                                    <span class="font-semibold text-slate-700">Día Seleccionado</span>
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
+                                    <span class="font-semibold text-slate-700">Turnos Disponibles</span>
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-3 h-3 rounded-md bg-slate-100 border border-slate-200 inline-block"></span>
+                                    <span>Cerrado</span>
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-[#0D9488] font-bold uppercase tracking-wider">Sin Salas de Espera Compartidas</span>
+                        </div>
+
+                        <input type="hidden" id="input-date" name="fecha">
+                    </div>
+                </div>
+
+                <!-- HORARIOS DISPONIBLES EN TIEMPO REAL -->
+                <div class="space-y-4 pt-4 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">3. Seleccione su Horario de Atención</label>
+                        <p class="text-xs text-slate-500">Horarios calculados en tiempo real (zona horaria Bogotá). El receso de almuerzo (12:00-13:00) permanece estrictamente reservado.</p>
+                    </div>
+
+                    <!-- Loading con Esqueleto Shimmer -->
+                    <div id="availability-loading" class="hidden space-y-3 py-4">
+                        <div class="flex items-center gap-2 text-xs font-semibold text-[#0D9488]">
+                            <div class="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Consultando disponibilidad en tiempo real...</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div class="slot-skeleton"></div>
+                            <div class="slot-skeleton"></div>
+                            <div class="slot-skeleton"></div>
+                            <div class="slot-skeleton"></div>
+                        </div>
+                    </div>
+
+                    <!-- Banners de Estado -->
+                    <div id="holiday-banner" class="hidden p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <span class="font-bold text-sm block">Día no hábil en clínica</span>
+                                <p id="holiday-banner-text" class="text-amber-800">El día seleccionado corresponde a un fin de semana o festivo oficial en Colombia. Por favor elija un día hábil de lunes a viernes.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="no-slots-banner" class="hidden p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                            <i data-lucide="calendar-x" class="w-5 h-5"></i>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-800">No hay turnos disponibles para esta fecha</h4>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Todos los turnos del sillón clínico se encuentran ocupados o el procedimiento excede el tiempo libre restante. Por favor seleccione otra fecha en el calendario.</p>
+                    </div>
+
+                    <div id="slot-taken-banner" class="hidden p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs space-y-3">
+                        <div class="flex items-start gap-3 text-rose-900">
+                            <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-sm block">El horario seleccionado acaba de ser reservado</span>
+                                <p id="slot-taken-text" class="text-rose-800 mt-0.5">Otro paciente ha reservado este intervalo en el sillón clínico. Le sugerimos los siguientes horarios libres cercanos:</p>
+                            </div>
+                        </div>
+                        <div id="slot-taken-alternatives" class="flex flex-wrap gap-2 pt-1"></div>
+                    </div>
+
+                    <!-- CONTENEDORES DE HORARIOS MANANA Y TARDE -->
+                    <div id="slots-container" class="space-y-4">
+                        <!-- Tarjeta Jornada Mañana -->
+                        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 border border-amber-200/80 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-xs">
+                                        <i data-lucide="sun" class="w-4 h-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-900">Jornada Mañana</h4>
+                                        <p class="text-[11px] text-amber-800">Franja de 07:00 a 12:00 • Máxima puntualidad</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-bold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">Mañana AM</span>
+                            </div>
+                            <div id="slots-morning" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5"></div>
+                        </div>
+
+                        <!-- Tarjeta Jornada Tarde -->
+                        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-50/70 via-white to-teal-50/40 border border-teal-200/80 shadow-xs space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b border-teal-200/60">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shadow-xs">
+                                        <i data-lucide="clock" class="w-4 h-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-900">Jornada Tarde</h4>
+                                        <p class="text-[11px] text-teal-800">Franja de 13:00 a 17:00 • Atención relajada</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-bold text-teal-900 bg-teal-100 px-2.5 py-0.5 rounded-full border border-teal-200">Tarde PM</span>
+                            </div>
+                            <div id="slots-afternoon" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen flotante de Cita Seleccionada -->
+                    <div id="selected-slot-summary" class="hidden p-4 rounded-2xl bg-gradient-to-r from-[#0A192F] via-[#0F2942] to-[#0D9488] text-white shadow-lg space-y-2 animate-fadeIn">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md text-emerald-300 flex items-center justify-center border border-white/20 shrink-0">
+                                    <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-teal-300 block">Turno Pre-Seleccionado</span>
+                                    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+                                        <span id="summary-badge-service" class="bg-white/20 px-2 py-0.5 rounded-md border border-white/20">-</span>
+                                        <span id="summary-badge-date" class="bg-white/20 px-2 py-0.5 rounded-md border border-white/20">-</span>
+                                        <span id="summary-badge-time" class="bg-emerald-400 text-[#0A192F] px-2.5 py-0.5 rounded-md font-extrabold shadow-xs">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-[11px] font-bold bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30 self-start sm:self-auto shrink-0">1 Sillón Exclusivo</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Verificacion de Seguridad "No soy un robot" (CAPTCHA) -->
+                <div class="space-y-3 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">Verificacion de Seguridad Obligatoria</label>
+                        <span id="captcha-badge-res" class="text-[11px] text-slate-500">Pendiente</span>
+                    </div>
+
+                    <div id="captcha-box-res" class="captcha-container space-y-4">
+                        <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <button type="button" id="tab-captcha-code-res" class="text-xs font-bold text-[#0D9488] border-b-2 border-[#0D9488] pb-1">
+                                Escribir Codigo
+                            </button>
+                            <button type="button" id="tab-captcha-grid-res" class="text-xs font-medium text-slate-500 hover:text-slate-800 pb-1">
+                                Seleccionar Imagenes (3x3)
+                            </button>
+                        </div>
+
+                        <!-- Modo 1: Canvas Alfanumerico -->
+                        <div id="panel-captcha-code-res" class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="captcha-canvas-wrap">
+                                    <canvas id="captcha-canvas-res" width="220" height="60" class="block"></canvas>
+                                </div>
+                                <button type="button" id="btn-reload-captcha-res" class="btn-compact btn-secondary text-xs" title="Generar nuevo codigo">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                    <span>Cambiar</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3 max-w-sm">
+                                <input type="text" id="input-captcha-code-res" placeholder="Ingrese el codigo de 6 letras" maxlength="8" class="uppercase font-mono tracking-widest text-sm bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 w-full focus:ring-2 focus:ring-[#0D9488]">
+                                <button type="button" id="btn-verify-captcha-code-res" class="btn-pill-primary text-xs py-2 px-4 shrink-0">
+                                    <span>Verificar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Modo 2: Cuadricula 3x3 -->
+                        <div id="panel-captcha-grid-res" class="space-y-3 hidden">
+                            <p id="captcha-grid-instruction-res" class="text-xs font-semibold text-slate-700">
+                                Selecciona las 3 imagenes que correspondan a: Sonrisa / Odontologia Estetica
+                            </p>
+                            <div id="captcha-grid-tiles-res" class="captcha-grid max-w-xs"></div>
+                            <button type="button" id="btn-verify-captcha-grid-res" class="btn-pill-primary text-xs py-2 px-5">
+                                <span>Verificar Seleccion (3 imagenes)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 4: Datos del Paciente -->
+                <div id="patient-data-container" class="space-y-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">Datos Personales del Paciente</label>
+                        <button type="button" id="btn-autofill-google-res" class="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1">
+                            <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                            <span>Autocompletar con Google</span>
+                        </button>
+                    </div>
+
+                    <form id="booking-form" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="input-nombre" class="block text-xs font-medium text-slate-700 mb-1">Nombre Completo</label>
+                                <input type="text" id="input-nombre" required placeholder="Ej. Camila Rodriguez" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                            </div>
+                            <div>
+                                <label for="input-telefono" class="block text-xs font-medium text-slate-700 mb-1">Telefono Movil (WhatsApp)</label>
+                                <input type="tel" id="input-telefono" required placeholder="300 123 4567 o +573001234567" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="input-email" class="block text-xs font-medium text-slate-700 mb-1">Correo Electronico (para envio de recordatorio .ics)</label>
+                            <input type="email" id="input-email" placeholder="paciente@correo.com" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                        </div>
+
+                        <div>
+                            <label for="input-notas" class="block text-xs font-medium text-slate-700 mb-1">Motivo o Consulta Previa (Opcional)</label>
+                            <textarea id="input-notas" rows="2" placeholder="Describa brevemente si tiene alguna molestia previa o preferencia de atencion..." class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]"></textarea>
+                        </div>
+
+                        <!-- Opcion de Google Calendar -->
+                        <div class="p-3 bg-ice-section rounded-xl border border-sky-100 flex items-center gap-3">
+                            <input type="checkbox" id="checkbox-save-gcal" checked class="w-4 h-4 text-[#0D9488] rounded border-slate-300 focus:ring-[#0D9488]">
+                            <label for="checkbox-save-gcal" class="text-xs text-slate-700 cursor-pointer">
+                                <strong>Guardar cita automaticamente en mi Google Calendar</strong> al confirmar
+                            </label>
+                        </div>
+
+                        <div id="booking-error" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800"></div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="btn-confirm-booking" class="w-full btn-pill-primary py-3.5 text-sm sm:text-base font-semibold shadow-md">
+                                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                <span>Confirmar Reserva de Cita</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Confirmacion Exitosa -->
+            <div id="booking-success-card" class="hidden clinic-card p-8 sm:p-10 space-y-6 text-center border-2 border-[#0D9488]/40">
+                <div class="w-16 h-16 rounded-full bg-teal-50 text-[#0D9488] flex items-center justify-center mx-auto shadow-sm">
+                    <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+                </div>
+                <div class="space-y-2">
+                    <span class="text-xs font-bold uppercase tracking-widest text-[#0D9488] block">Cita Confirmada con Exito</span>
+                    <h2 class="font-serif text-3xl font-bold text-[#0A192F]">Su espacio exclusivo ha sido reservado</h2>
+                    <p class="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                        Le esperamos en nuestro consultorio privado en Bogota. El consultorio se reservara exclusivamente para usted.
+                    </p>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-ice-section border border-sky-100 max-w-md mx-auto text-left space-y-2 text-xs">
+                    <div class="flex justify-between py-1 border-b border-sky-100">
+                        <span class="text-slate-500">Codigo de Sala:</span>
+                        <span id="success-codigo" class="font-mono font-bold text-slate-900">T-XX</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-sky-100">
+                        <span class="text-slate-500">Procedimiento:</span>
+                        <span id="success-servicio" class="font-semibold text-slate-900">-</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-sky-100">
+                        <span class="text-slate-500">Fecha y Hora:</span>
+                        <span id="success-fechahora" class="font-semibold text-slate-900">-</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-500">Ubicacion:</span>
+                        <span class="font-semibold text-slate-900">Carrera 15 # 85-30, Cons. 402</span>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+                    <a id="btn-add-gcal" href="#" target="_blank" rel="noopener noreferrer" class="btn-pill-primary text-xs py-2.5 px-6 shadow-sm flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>Anadir Ahora a mi Google Calendar</span>
+                    </a>
+                    <a id="btn-download-ics" href="#" class="btn-pill-secondary text-xs py-2.5 px-6 flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Descargar (.ics)</span>
+                    </a>
+                    <button type="button" class="btn-compact btn-secondary text-xs" onclick="window.switchView && window.switchView('landing')">
+                        <span>Volver a Inicio</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- APARTADO 3: PANEL ADMINISTRATIVO Y RECEPCION (#view-admin) -->
+        <!-- ================================================================== -->
+        <section id="view-admin" class="view-container hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 text-xs text-[#0D9488] font-bold mb-1">
+                        <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                        <span>Consola de Administracion Clinica</span>
+                    </div>
+                    <h1 class="font-serif text-2xl font-bold text-[#0A192F]">Gestion Operativa y Agenda del Sillon</h1>
+                </div>
+
+                <!-- Sub-pestanas de Administracion -->
+                <div class="flex items-center gap-2 border border-slate-200 p-1 rounded-xl bg-white shadow-xs">
+                    <button type="button" id="tab-btn-agenda" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#0D9488] text-white transition-colors" onclick="window.switchAdminTab('agenda')">
+                        Agenda del Dia
+                    </button>
+                    <button type="button" id="tab-btn-retraso" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" onclick="window.switchAdminTab('retraso')">
+                        Gestion de Retraso
+                    </button>
+                    <button type="button" id="tab-btn-staff" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" onclick="window.switchAdminTab('staff')">
+                        Usuarios y Roles
+                    </button>
+                </div>
+            </div>
+
+            <!-- Subpestana 1: Calendario FullCalendar -->
+            <div id="admin-tab-agenda" class="clinic-card p-6 bg-white space-y-4">
+                <div id="admin-fullcalendar" class="min-h-[580px]"></div>
+            </div>
+
+            <!-- Subpestana 2: Desplazamiento Masivo por Retraso -->
+            <div id="admin-tab-retraso" class="hidden clinic-card p-6 sm:p-8 bg-white max-w-2xl mx-auto space-y-6">
+                <div class="space-y-1">
+                    <h3 class="font-serif text-lg font-bold text-slate-900">Desplazamiento Masivo de Agenda</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Desplaza en bloque las citas posteriores ante extension quirurgica. Neutraliza colisiones GiST 23P01 y notifica por WhatsApp a los pacientes.
+                    </p>
+                </div>
+
+                <form id="form-retraso" class="space-y-4">
+                    <div>
+                        <label for="retraso-minutos" class="block text-xs font-semibold text-slate-700 mb-1">Minutos de Desplazamiento</label>
+                        <select id="retraso-minutos" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                            <option value="15">15 Minutos</option>
+                            <option value="30">30 Minutos</option>
+                            <option value="45">45 Minutos</option>
+                            <option value="60">60 Minutos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="retraso-motivo" class="block text-xs font-semibold text-slate-700 mb-1">Motivo Clinico</label>
+                        <textarea id="retraso-motivo" required rows="2" placeholder="Ej. Extension quirurgica en colocacion de implante oseointegrado." class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]"></textarea>
+                    </div>
+
+                    <div id="retraso-result" class="hidden p-3 rounded-lg text-xs"></div>
+
+                    <div class="pt-2">
+                        <button type="submit" id="btn-submit-retraso" class="w-full btn-pill-primary py-2.5 text-xs font-semibold">
+                            <i data-lucide="clock-alert" class="w-4 h-4"></i>
+                            <span>Aplicar Desplazamiento en Bloque</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Subpestana 3: Creacion y Gestion de Personal Staff -->
+            <div id="admin-tab-staff" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Formulario de Creacion -->
+                    <div class="lg:col-span-5 clinic-card p-6 bg-white space-y-4">
+                        <div class="space-y-1">
+                            <h3 class="font-serif text-base font-bold text-slate-900">Registrar Nuevo Colaborador</h3>
+                            <p class="text-xs text-slate-500">Acceso protegido exclusivamente para el Administrador.</p>
+                        </div>
+
+                        <form id="form-crear-staff" class="space-y-3">
+                            <div>
+                                <label for="staff-input-nombre" class="block text-xs font-medium text-slate-700 mb-1">Nombre Completo</label>
+                                <input type="text" id="staff-input-nombre" required placeholder="Dr. Camilo Mendez" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0D9488]">
+                            </div>
+
+                            <div>
+                                <label for="staff-input-email" class="block text-xs font-medium text-slate-700 mb-1">Correo Institucional</label>
+                                <input type="email" id="staff-input-email" required placeholder="camilo@lujoluminoso.co" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0D9488]">
+                            </div>
+
+                            <div>
+                                <label for="staff-input-password" class="block text-xs font-medium text-slate-700 mb-1">Contrasena de Acceso (Argon2id)</label>
+                                <input type="password" id="staff-input-password" required minlength="8" placeholder="Minimo 8 caracteres" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0D9488]">
+                            </div>
+
+                            <div>
+                                <label for="staff-select-rol" class="block text-xs font-medium text-slate-700 mb-1">Rol de Acceso Clinico</label>
+                                <select id="staff-select-rol" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#0D9488]">
+                                    <option value="doctor">Doctor Especialista</option>
+                                    <option value="recepcion">Recepcion y Asistencia</option>
+                                    <option value="admin">Administrador General</option>
+                                </select>
+                            </div>
+
+                            <div id="staff-create-error" class="hidden p-2 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs"></div>
+                            <div id="staff-create-success" class="hidden p-2 rounded bg-teal-50 border border-teal-200 text-teal-800 text-xs"></div>
+
+                            <button type="submit" id="btn-submit-staff" class="w-full btn-pill-primary py-2 text-xs font-semibold">
+                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                                <span>Crear Cuenta de Personal</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Listado de Personal Activo -->
+                    <div class="lg:col-span-7 clinic-card p-6 bg-white space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-serif text-base font-bold text-slate-900">Personal Registrado</h3>
+                            <button type="button" id="btn-refresh-staff" class="btn-compact btn-secondary text-xs" onclick="window.cargarListaPersonal()">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                <span>Actualizar</span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2.5 font-semibold">Colaborador</th>
+                                        <th class="p-2.5 font-semibold">Rol</th>
+                                        <th class="p-2.5 font-semibold">Estado</th>
+                                        <th class="p-2.5 font-semibold text-right">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-staff-body" class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="4" class="p-4 text-center text-slate-400">Cargando personal...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- APARTADO 4: MODO ENFOQUE DEL DOCTOR (#view-doctor) -->
+        <!-- ================================================================== -->
+        <section id="view-doctor" class="view-container hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 text-xs text-[#0D9488] font-bold mb-1">
+                        <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i>
+                        <span>Modo Enfoque Quirurgico</span>
+                    </div>
+                    <h1 class="font-serif text-2xl font-bold text-[#0A192F]">Sillon Odontologico Principal</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="doctor-online-status" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Sincronizacion en Vivo</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Ficha del Paciente Actual -->
+            <div class="clinic-card p-6 sm:p-8 bg-white space-y-6 border-l-4 border-l-[#0D9488]">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest block">Turno en Atencion</span>
+                        <div class="flex items-center gap-3 mt-1">
+                            <span id="doctor-paciente-codigo" class="font-mono font-bold text-2xl text-[#0D9488]">T-XX</span>
+                            <h2 id="doctor-paciente-nombre" class="font-serif text-2xl font-bold text-[#0A192F]">Sin paciente activo</h2>
+                        </div>
+                        <p id="doctor-paciente-servicio" class="text-xs text-slate-500 mt-1">Seleccione un turno desde el calendario para iniciar procedimiento.</p>
+                    </div>
+
+                    <!-- Cronometro Regresivo de Gracia de 15 min -->
+                    <div id="doctor-timer-wrap" class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center min-w-[160px]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tiempo Restante</span>
+                        <span id="doctor-timer-val" class="font-mono text-2xl font-bold text-[#0A192F] block mt-0.5">15:00</span>
+                        <span id="doctor-timer-state" class="text-[10px] text-slate-500 font-medium">Ventana de gracia</span>
+                    </div>
+                </div>
+
+                <!-- Botones de Accion Clinica del Doctor -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" id="btn-doctor-llamar" class="btn-compact btn-secondary text-xs" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('llamando')">
+                        <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-[#0284C7]"></i>
+                        <span>Llamar a Pantalla</span>
+                    </button>
+                    <button type="button" id="btn-doctor-atencion" class="btn-compact btn-primary text-xs" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('en_atencion')">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                        <span>Iniciar Atencion</span>
+                    </button>
+                    <button type="button" id="btn-doctor-completar" class="btn-compact btn-secondary text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('completado')">
+                        <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                        <span>Completar</span>
+                    </button>
+                    <button type="button" id="btn-doctor-ausente" class="btn-compact btn-secondary text-xs text-rose-700 border-rose-200 hover:bg-rose-50" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('cancelado_ausente')">
+                        <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                        <span>Marcar Ausente</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- APARTADO 5: PANTALLA TV DE SALA DE ESPERA (#view-tv) -->
+        <!-- ================================================================== -->
+        <section id="view-tv" class="view-container hidden min-h-screen p-6 sm:p-12 flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
+                        <i data-lucide="tv" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold tracking-tight text-white block">Lujo Luminoso</span>
+                        <span class="text-xs text-slate-400 font-medium">Turnero en Sala de Espera</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button type="button" id="btn-toggle-tv-audio" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex items-center gap-1.5" onclick="window.RealtimeManager.toggleAudio()">
+                        <i data-lucide="volume-2" class="w-3.5 h-3.5 text-teal-400"></i>
+                        <span>Audio Activado</span>
+                    </button>
+                    <button type="button" class="text-xs text-slate-400 hover:text-white" onclick="window.switchView('landing')">
+                        Salir de Pantalla
+                    </button>
+                </div>
+            </div>
+
+            <!-- Foco Principal del Turno Llamado -->
+            <div class="py-12 flex items-center justify-center">
+                <div id="tv-focus-card" class="tv-glow-card tv-calling-active rounded-3xl p-10 sm:p-14 max-w-2xl w-full text-center space-y-4">
+                    <span class="text-xs font-semibold tracking-widest text-teal-400 uppercase block">Paciente en Turno</span>
+                    <span id="tv-current-codigo" class="font-mono text-6xl sm:text-7xl font-bold text-white block tracking-wider">T-XX</span>
+                    <h2 id="tv-current-nombre" class="text-2xl sm:text-3xl font-semibold text-slate-200">Esperando Proximo Llamado</h2>
+                    <p id="tv-current-servicio" class="text-sm text-slate-400 font-medium">Por favor pase al consultorio principal</p>
+                </div>
+            </div>
+
+            <!-- Grilla Inferior de Proximos Turnos -->
+            <div id="tv-upcoming-grid" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800"></div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL UNIFICADO DE AUTENTICACION Y REGISTRO (#modal-auth) -->
+    <!-- ====================================================================== -->
+    <div id="modal-auth" class="fixed inset-0 z-50 bg-[#0A192F]/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="clinic-card bg-white max-w-md w-full p-6 sm:p-8 shadow-2xl rounded-2xl relative space-y-6">
+            <button type="button" id="btn-close-auth" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Encabezado con Pestanas -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif text-xl font-bold text-[#0A192F]">Acceso a Lujo Luminoso</h3>
+                        <p class="text-xs text-slate-500">Sesion protegida mediante cookies HttpOnly seguras.</p>
+                    </div>
+                </div>
+
+                <!-- Boton 1-Clic Continuar con Google -->
+                <button type="button" id="btn-google-auth-trigger" class="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Continuar con Google (1 Clic)</span>
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-3 text-[11px] font-semibold text-slate-400 uppercase">o con correo</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <div class="flex border-b border-slate-200">
+                    <button type="button" id="tab-auth-login" class="auth-tab-btn active flex-1 text-center">
+                        Iniciar Sesion
+                    </button>
+                    <button type="button" id="tab-auth-register" class="auth-tab-btn flex-1 text-center">
+                        Crear Cuenta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulario 1: Login -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-xs font-semibold text-slate-700 mb-1">Correo Electronico</label>
+                    <input type="email" id="login-email" required placeholder="correo@ejemplo.com" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div>
+                    <label for="login-password" class="block text-xs font-semibold text-slate-700 mb-1">Contrasena de Acceso</label>
+                    <input type="password" id="login-password" required placeholder="********" class="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div id="login-error" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800"></div>
+
+                <button type="submit" id="btn-login-submit" class="w-full btn-pill-primary py-2.5 text-sm font-semibold shadow-sm">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Ingresar a la Consola</span>
+                </button>
+            </form>
+
+            <!-- Formulario 2: Registro de Nuevo Usuario -->
+            <form id="register-form" class="space-y-3 hidden">
+                <div>
+                    <label for="reg-nombre" class="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="reg-nombre" required placeholder="Ej. Nicolas Gomez" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div>
+                    <label for="reg-telefono" class="block text-xs font-semibold text-slate-700 mb-1">Telefono Movil (WhatsApp)</label>
+                    <input type="tel" id="reg-telefono" required placeholder="+573001234567" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div>
+                    <label for="reg-email" class="block text-xs font-semibold text-slate-700 mb-1">Correo Electronico</label>
+                    <input type="email" id="reg-email" required placeholder="nicolas@correo.com" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div>
+                    <label for="reg-password" class="block text-xs font-semibold text-slate-700 mb-1">Contrasena Segura (Argon2id)</label>
+                    <input type="password" id="reg-password" required minlength="8" placeholder="Minimo 8 caracteres" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-[#0D9488]">
+                </div>
+
+                <div id="register-error" class="hidden p-2 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs"></div>
+
+                <button type="submit" id="btn-register-submit" class="w-full btn-pill-primary py-2.5 text-xs font-semibold shadow-sm">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                    <span>Crear Cuenta e Iniciar Sesion</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL SELECTOR DE CUENTAS DE GOOGLE (#modal-google-accounts) -->
+    <!-- ====================================================================== -->
+    <div id="modal-google-accounts" class="fixed inset-0 z-50 bg-[#0A192F]/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="clinic-card bg-white max-w-sm w-full p-6 shadow-2xl rounded-2xl relative space-y-4">
+            <button type="button" id="btn-close-google-accounts" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <div>
+                    <h3 class="font-serif text-base font-bold text-slate-900">Iniciar Sesion con Google</h3>
+                    <p class="text-[11px] text-slate-500">Seleccione una cuenta para acceder a Lujo Luminoso</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-2">
+                <!-- Cuenta 1: Doctor -->
+                <div class="google-account-card" onclick="window.loginWithPresetGoogle('doctor@lujoluminoso.co', 'Dr. Especialista Titular')">
+                    <div class="w-8 h-8 rounded-full bg-teal-100 text-[#0D9488] font-bold flex items-center justify-center text-xs">
+                        D
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-slate-900 block">Dr. Especialista Titular</span>
+                        <span class="text-[11px] text-slate-500">doctor@lujoluminoso.co</span>
+                    </div>
+                </div>
+
+                <!-- Cuenta 2: Paciente -->
+                <div class="google-account-card" onclick="window.loginWithPresetGoogle('paciente.demo@gmail.com', 'Camila Rodriguez')">
+                    <div class="w-8 h-8 rounded-full bg-sky-100 text-[#0284C7] font-bold flex items-center justify-center text-xs">
+                        C
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-slate-900 block">Camila Rodriguez</span>
+                        <span class="text-[11px] text-slate-500">paciente.demo@gmail.com</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entrada personalizada -->
+            <form id="google-custom-form" class="pt-2 border-t border-slate-100 space-y-2">
+                <span class="text-[11px] text-slate-500 font-medium block">O use otra cuenta de Google:</span>
+                <input type="text" id="google-custom-name" required placeholder="Nombre completo" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-[#0D9488]">
+                <input type="email" id="google-custom-email" required placeholder="usuario@gmail.com" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-[#0D9488]">
+                <button type="submit" class="w-full btn-pill-primary text-xs py-2 font-semibold">
+                    <span>Continuar con esta cuenta</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL DE ESCRITURA DE RESENA (#modal-review) -->
+    <!-- ====================================================================== -->
+    <div id="modal-review" class="fixed inset-0 z-50 bg-[#0A192F]/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="clinic-card bg-white max-w-lg w-full p-6 sm:p-8 shadow-2xl rounded-2xl relative space-y-6">
+            <button type="button" id="btn-close-review-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="space-y-2">
+                <div class="w-12 h-12 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shadow-xs">
+                    <i data-lucide="star" class="w-6 h-6 fill-current"></i>
+                </div>
+                <h3 class="font-serif text-2xl font-bold text-[#0A192F]">Califique su Experiencia</h3>
+                <p class="text-xs sm:text-sm text-slate-500 font-light">
+                    Su opinion ayuda a futuros pacientes a conocer la excelencia y privacidad de nuestro consultorio de cita unica.
+                </p>
+            </div>
+
+            <form id="form-nueva-resena" class="space-y-4">
+                <div id="review-form-error" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl"></div>
+
+                <!-- Selector de Estrellas Interactivas -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Su Calificacion</label>
+                    <div class="flex items-center gap-2" id="star-picker-container">
+                        <button type="button" class="star-picker-btn p-1.5 rounded-lg transition-transform hover:scale-110 star-active" data-star="1" title="1 Estrella">
+                            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </button>
+                        <button type="button" class="star-picker-btn p-1.5 rounded-lg transition-transform hover:scale-110 star-active" data-star="2" title="2 Estrellas">
+                            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </button>
+                        <button type="button" class="star-picker-btn p-1.5 rounded-lg transition-transform hover:scale-110 star-active" data-star="3" title="3 Estrellas">
+                            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </button>
+                        <button type="button" class="star-picker-btn p-1.5 rounded-lg transition-transform hover:scale-110 star-active" data-star="4" title="4 Estrellas">
+                            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </button>
+                        <button type="button" class="star-picker-btn p-1.5 rounded-lg transition-transform hover:scale-110 star-active" data-star="5" title="5 Estrellas">
+                            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </button>
+                    </div>
+                    <input type="hidden" id="review-rating-value" value="5">
+                </div>
+
+                <!-- Nombre del Paciente -->
+                <div class="space-y-1.5">
+                    <label for="review-nombre" class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Nombre Completo o Alias</label>
+                    <input type="text" id="review-nombre" required placeholder="Ej: Dr. Alejandro P. o Maria C." class="w-full text-sm bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#0D9488] focus:border-transparent">
+                </div>
+
+                <!-- Servicio / Procedimiento Realizado -->
+                <div class="space-y-1.5">
+                    <label for="review-servicio" class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Tratamiento Realizado</label>
+                    <select id="review-servicio" class="w-full text-sm bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#0D9488] focus:border-transparent">
+                        <option value="Diseno de Sonrisa Digital 3D">Diseno de Sonrisa Digital 3D</option>
+                        <option value="Microcarillas Ceramicas E-Max">Microcarillas Ceramicas E-Max</option>
+                        <option value="Implante Dental Guiado por Computadora">Implante Dental Guiado por Computadora</option>
+                        <option value="Aclaramiento Dental Laser">Aclaramiento Dental Laser</option>
+                        <option value="Ortodoncia Invisible Flow">Ortodoncia Invisible Flow</option>
+                        <option value="Rehabilitacion Oral Completa">Rehabilitacion Oral Completa</option>
+                        <option value="Valoracion Clinica Inicial">Valoracion Clinica Inicial</option>
+                    </select>
+                </div>
+
+                <!-- Comentario Detallado -->
+                <div class="space-y-1.5">
+                    <label for="review-comentario" class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Su Opinion y Experiencia</label>
+                    <textarea id="review-comentario" rows="3" required placeholder="Describa como fue su atencion, puntualidad, comodidad y resultados..." class="w-full text-sm bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-[#0D9488] focus:border-transparent"></textarea>
+                </div>
+
+                <!-- Botones de Accion -->
+                <div class="flex items-center justify-end gap-3 pt-3">
+                    <button type="button" onclick="document.getElementById('modal-review').classList.add('hidden')" class="btn-pill-secondary py-2.5 px-5 text-xs font-semibold">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-pill-primary py-2.5 px-6 text-xs font-semibold flex items-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Publicar Reseña</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL DE DETALLE Y ACCIONES DE TURNO (RECEPCION Y ADMIN) -->
+    <!-- ====================================================================== -->
+    <div id="modal-turno-detail" class="fixed inset-0 z-50 bg-[#0A192F]/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="clinic-card bg-white max-w-lg w-full p-6 shadow-2xl rounded-2xl relative space-y-5 border border-slate-200">
+            <button type="button" id="btn-close-turno-detail" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700" onclick="window.RealtimeManager.closeTurnoDetailModal()">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="detail-turno-codigo" class="font-mono font-bold text-base text-[#0D9488]">T-XX</span>
+                        <span id="detail-turno-estado" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Estado</span>
+                    </div>
+                    <h3 id="detail-turno-paciente" class="font-serif text-lg font-bold text-slate-900">Paciente</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl text-xs">
+                <div>
+                    <span class="text-slate-400 block">Procedimiento:</span>
+                    <span id="detail-turno-servicio" class="font-semibold text-slate-800">Servicio</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Horario:</span>
+                    <span id="detail-turno-horario" class="font-semibold text-slate-800">00:00 - 00:00</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Telefono:</span>
+                    <span id="detail-turno-telefono" class="font-semibold text-slate-800">+573000000000</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Origen:</span>
+                    <span id="detail-turno-origen" class="font-semibold text-slate-800">Web</span>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <span class="text-xs font-semibold text-slate-700 block">Cambiar Estado Operativo:</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" class="btn-compact btn-secondary text-xs" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('en_sala')">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-[#0D9488]"></i>
+                        <span>Llegada a Sala</span>
+                    </button>
+                    <button type="button" class="btn-compact btn-steel text-xs" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('llamando')">
+                        <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i>
+                        <span>Llamar en Pantalla</span>
+                    </button>
+                </div>
+                <button type="button" class="btn-compact btn-secondary text-xs w-full text-rose-700 border-rose-200 hover:bg-rose-50" onclick="window.RealtimeManager.cambiarEstadoDesdeModal('cancelado_paciente')">
+                    <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                    <span>Cancelar Cita</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- BOTON FLOTANTE DE WHATSAPP (GLOBAL, PERSISTENTE EN SCROLL) -->
+    <!-- ====================================================================== -->
+    <a id="btn-whatsapp-float" href="https://wa.me/573001234567?text=Hola,%20deseo%20informacion%20y%20agendar%20una%20cita%20en%20Lujo%20Luminoso" target="_blank" rel="noopener noreferrer" class="whatsapp-float whatsapp-pulse" aria-label="Escribenos por WhatsApp" title="Escribenos por WhatsApp">
+        <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+    </a>
+
+    <!-- MODO DEMOSTRACION (SOLO SI DEMO_MODE=TRUE) -->
+    {% if demo_mode %}
+    <div id="demo-toolbar" class="hidden"></div>
+    <div id="demo-whatsapp-drawer" class="hidden"></div>
+    {% endif %}
+
+    <!-- Scripts de la aplicacion -->
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/realtime.js"></script>
+    {% if demo_mode %}
+    <script src="/static/js/demo.js"></script>
+    {% endif %}
+</body>
+</html>

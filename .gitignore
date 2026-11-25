@@ -1,0 +1,52 @@
+# Entorno y Secretos
+.env
+.env.*
+!.env.example
+
+# Bytecode y Cache de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Entornos Virtuales
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Testing y Cobertura
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs y Archivos Temporales
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Distribucion y Empaquetado
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Archivos de Sistema Operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
